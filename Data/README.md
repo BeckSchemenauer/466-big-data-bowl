@@ -2,7 +2,8 @@ This is where you put your data. When adding to this folder, add the following t
 
 filename.csv | file description | source (kaggle, specific method, etc.)
 
-Contents:
+# Contents:
+
 player_play.csv | includes pre snap movement by player and more | kaggle
 
 players.csv | player position, etc. | kaggle
