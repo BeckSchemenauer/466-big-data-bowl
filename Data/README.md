@@ -28,3 +28,7 @@ tracking_week_8.csv | contains data such as x, y by player | kaggle
 
 tracking_week_9.csv | contains data such as x, y by player | kaggle
 
+relevant_wr_data.csv | contains data from tracking_week_1 filtered by WR and additional variables hand selected using domain knowledge | feature_selection_preprocessing.py
+
+tracking_week_1_wr_only.csv | contains tracking week_1 data filtered by WR | feature_selection_preprocessing.py
+
