@@ -14,7 +14,7 @@ def filter_by_wr():
     wr_tracking_df = pd.merge(tracking_df, wr_players, on='nflId', how='inner')
 
     # Save the filtered DataFrame to a new CSV file
-    wr_tracking_df.to_csv('Data/tracking_week_1_wr_only.csv', index=False)
+    wr_tracking_df.to_csv('../Data/tracking_week_1_wr_only.csv', index=False)
 
     print("Filtered CSV with only WR position data saved as 'Data/tracking_week_1_wr_only.csv'.")
 
@@ -51,7 +51,7 @@ def combine_tracking_data(tracking_file, plays_file, player_play_file, players_f
     combined_df = pd.merge(combined_df, plays_df, on=['gameId', 'playId'], how='left')
 
     # Write the final DataFrame to a CSV file
-    combined_df.to_csv('Data/relevant_wr_data.csv', index=False)
+    combined_df.to_csv('../Data/relevant_wr_data.csv', index=False)
 
     print("Filtered and combined data saved as 'Data/relevant_wr_data.csv'.")
     return combined_df
@@ -88,7 +88,7 @@ def filter_after_snap():
     df_filtered = pd.concat(filtered_rows).reset_index(drop=True)
 
     # Write the filtered DataFrame to a CSV file
-    df_filtered.to_csv('AfterSnap/after_snap_all_data.csv', index=False)
+    df_filtered.to_csv('../AfterSnap/after_snap_all_data.csv', index=False)
 
     print("Filtered data to only include SNAP and every 10th AFTER_SNAP frame. Saved as 'filtered_data.csv'.")
 
@@ -128,14 +128,14 @@ def save_after_snap():
     # Loop through snap_after_snap_dfs and save each DataFrame to a CSV file
     for i, df in enumerate(snap_after_snap_dfs.values()):
         # Save each DataFrame with the specified filename format
-        df.to_csv(f"AfterSnap/after_snap_{i + 1}.csv", index=False)
+        df.to_csv(f"../AfterSnap/after_snap_{i + 1}.csv", index=False)
 
     print("Split after_snap data into frame splits, saved in AfterSnap/after_snap_n.csv.")
 
 
 def alter_after_snap():
     # Directory containing the CSV files
-    directory = "AfterSnap"
+    directory = "../AfterSnap"
 
     # Loop through each CSV file in the directory
     for filename in os.listdir(directory):
@@ -178,8 +178,8 @@ def alter_after_snap():
 
 # Usage
 filter_by_wr()
-combined_df = combine_tracking_data('../Data/tracking_week_1_wr_only.csv', 'Data/plays.csv', 'Data/player_play.csv',
-                                    'Data/players.csv')
+combined_df = combine_tracking_data('../Data/tracking_week_1_wr_only.csv', '../Data/plays.csv', '../Data/player_play.csv',
+                                    '../Data/players.csv')
 filter_after_snap()
 save_after_snap()
 alter_after_snap()
