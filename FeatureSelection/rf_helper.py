@@ -5,8 +5,7 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import accuracy_score, classification_report
 
 
-# Define a function to categorize x_offset
-def categorize_x_offset(x_offset):
+def group_by_five(x_offset):
     if x_offset < 0:
         return 0
     elif 0 <= x_offset <= 5:
@@ -21,16 +20,24 @@ def categorize_x_offset(x_offset):
         return 5
 
 
+def group_by_ten(x_offset):
+    if x_offset < 10:
+        return 0
+    elif 10 <= x_offset:
+        return 1
+
+
 # Function to convert mm:ss to seconds
 def convert_to_seconds(time_str, quarter):
     minutes, seconds = map(int, time_str.split(':'))
 
     # if quarter == 1 or quarter == 3:
     #     return minutes * 60 + seconds + 900
+
     return minutes * 60 + seconds
 
 
-def get_normalized_data(csv_file):
+def get_normalized_data(csv_file, five_yard_grouping):
     # Load the CSV file
     data = pd.read_csv(csv_file)
 
@@ -50,7 +57,10 @@ def get_normalized_data(csv_file):
 
         # Append to X and y, with y being the categorized class
         X.append(input_row)
-        y.append(categorize_x_offset(x_offset_value))
+        if five_yard_grouping:
+            y.append(group_by_five(x_offset_value))
+        else:
+            y.append(group_by_ten(x_offset_value))
 
     # Convert X and y to DataFrames
     X = pd.DataFrame(X)
@@ -69,7 +79,7 @@ def get_normalized_data(csv_file):
     return X_normalized, y
 
 
-def read_category(category):
+def read_five_yard_category(category):
     if category == 0:
         return 'negative'
     elif category == 1:
@@ -84,19 +94,31 @@ def read_category(category):
         return '20+'
 
 
-def generate_report(model, X_normalized, X_test, y_test):
+def read_ten_yard_category(category):
+    if category == 0:
+        return '0-10'
+    elif category == 1:
+        return '10+'
+
+
+def generate_report(model, X_normalized, X_test, y_test, five_yard_grouping):
     # Calculate overall accuracy
     y_pred = model.predict(X_test)
     overall_accuracy = accuracy_score(y_test, y_pred)
     print('Overall Accuracy:', overall_accuracy)
 
-    # Map y_test and y_pred to categorical labels
-    y_test_labels = [read_category(category) for category in y_test]
-    y_pred_labels = [read_category(category) for category in y_pred]
+    if five_yard_grouping:
+        # Map y_test and y_pred to categorical labels
+        y_test_labels = [read_five_yard_category(category) for category in y_test]
+        y_pred_labels = [read_five_yard_category(category) for category in y_pred]
+    else:
+        # Map y_test and y_pred to categorical labels
+        y_test_labels = [read_ten_yard_category(category) for category in y_test]
+        y_pred_labels = [read_ten_yard_category(category) for category in y_pred]
 
     # Print classification report for per-class accuracy
     print('\nClassification Report:')
-    print(classification_report(y_test_labels, y_pred_labels))
+    print(classification_report(y_test_labels, y_pred_labels, zero_division=1))
 
     # Calculate accuracy by category
     category_counts = defaultdict(lambda: {'correct': 0, 'total': 0})
