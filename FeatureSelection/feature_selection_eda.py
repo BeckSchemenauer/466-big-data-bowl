@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Read the CSV file into a DataFrame
-df = pd.read_csv('../AfterSnap/after_snap_5.csv')
+df = pd.read_csv('../AfterSnap/after_snap_3.csv')
 
 # Identify numerical columns and categorical columns
 numerical_cols = df.select_dtypes(include=['number']).columns.tolist()
