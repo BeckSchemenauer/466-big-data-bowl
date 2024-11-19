@@ -26,11 +26,11 @@ def combine_tracking_data(tracking_file, plays_file, player_play_file, players_f
     ])
 
     player_play_df = pd.read_csv(player_play_file, usecols=[
-        'gameId', 'playId', 'nflId', 'inMotionAtBallSnap', 'shiftSinceLineset', 'motionSinceLineset'
+        'gameId', 'playId', 'nflId', 'teamAbbr', 'inMotionAtBallSnap', 'shiftSinceLineset', 'motionSinceLineset'
     ])
 
     plays_df = pd.read_csv(plays_file, usecols=[
-        'gameId', 'playId', 'down', 'yardsToGo', 'absoluteYardlineNumber', 'gameClock',
+        'gameId', 'playId', 'down', 'yardsToGo', 'absoluteYardlineNumber', 'gameClock', 'quarter',
         'preSnapHomeScore', 'preSnapVisitorScore', 'offenseFormation', 'pff_passCoverage', 'pff_manZone',
         'receiverAlignment', 'preSnapHomeTeamWinProbability',
         'preSnapVisitorTeamWinProbability', 'expectedPoints'
@@ -183,4 +183,3 @@ combined_df = combine_tracking_data('../Data/tracking_week_1_wr_only.csv', '../D
 filter_after_snap()
 save_after_snap()
 alter_after_snap()
-print()
