@@ -6,19 +6,8 @@ import matplotlib.pyplot as plt
 
 # Load the data
 
-start = time.time()
-data = pd.read_csv('./Data/tracking_week_1.csv')
-players = pd.read_csv('./Data/players.csv')
-plays = pd.read_csv('./Data/plays.csv')
-player_play = pd.read_csv('./Data/player_play.csv')
-end = time.time()
-print(f"Loaded data in {(end - start):.2f} seconds")
-
 # Define bucket ranges
 def categorize_yardline(yardline, ):
-    yards_to_go = None
-
-
     if yardline > 100:
         return ">100 yards to go"
     elif 80 <= yardline <= 100:
@@ -36,22 +25,15 @@ def categorize_yardline(yardline, ):
         return 'Out of range'
 
 
-def player_tracking_data():
-    player_data = players[players['nflId'] == player_id]
-    player_dict = player_data.to_dict('records')[0]
-
-
-    tracking_data = data[data['nflId'] == player_id]
-    return tracking_data, player_dict
+def player_tracking_data(tracking_week_x):
+    tracking_data = tracking_week_x[tracking_week_x['nflId'] == player_id]
+    return tracking_data
 
 def standardize_data(tracking_data):
     # Standardize the player's direction to always appear as moving to the right
-    start = time.time()
     tracking_data['standardized_x'] = tracking_data.apply(
         lambda row: 120 - row['x'] if row['playDirection'] == 'left' else row['x'], axis=1
     )
-    end = time.time()
-    print(f"Standardized x in {(end - start):.2f} seconds")
     return tracking_data
 
 def graph_tracking_data(tracking_data, player_id, player_position, standardized_x=False, bucket_name=None):
@@ -62,6 +44,14 @@ def graph_tracking_data(tracking_data, player_id, player_position, standardized_
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_xlim(0, 120)  # Field length in yards
     ax.set_ylim(0, 53.3)  # Field width in yards
+
+    # Add endzone lines
+    ax.axvline(10, color='red', linestyle='--', linewidth=2, label='Endzone Boundary')
+    ax.axvline(110, color='red', linestyle='--', linewidth=2)
+
+    # Add endzone labels
+    ax.text(5, 26.65, "Endzone", color='red', fontsize=12, ha='center', rotation=90, verticalalignment='center')
+    ax.text(115, 26.65, "Endzone", color='red', fontsize=12, ha='center', rotation=90, verticalalignment='center')
 
     # Plot each play's movement as a line, overlaying all plays
     plays = tracking_data['playId'].unique()
@@ -79,10 +69,6 @@ def graph_tracking_data(tracking_data, player_id, player_position, standardized_
             reception = True if player_play_data.iloc[0]["hadPassReception"] == 1 else False
         else:
             reception = True
-        # if reception:
-        #     print(f"reception on Play: {play_id}")
-        # TODO: plot point of reception
-        reception_frame_id = 0
 
         # Generate a unique color for this play
         color = plt.cm.viridis(np.random.rand())
@@ -157,21 +143,68 @@ def graph_by_yard_bucket(tracking_data, player_id, player_position, standardized
         bucket_data = tracking_data[tracking_data['yard_bucket'] == bucket]
         graph_tracking_data(bucket_data, player_id, player_position, standardized_x, bucket_name=bucket)
 
-if __name__ == "__main__":
-    player_id = 46206
 
-    # Load and standardize tracking data
-    tracking_data, player_dict = player_tracking_data()
+def load_and_process_data(weeks, weeks_graphed):
+    # Initialize an empty list to store processed data from each week
+    all_tracking_data = []
+
+    # Loop through each week and process
+    for week in weeks[:weeks_graphed]:
+        start = time.time()
+
+        # Load tracking data for the current week
+        tracking_data = pd.read_csv(f'./Data/tracking_week_{week}.csv')
+
+        # isolate player tracking data
+        tracking_data = player_tracking_data(tracking_data)
+
+        # Standardize data (if needed)
+        tracking_data = standardize_data(tracking_data)
+
+        # Merge tracking data with play data
+        tracking_data = tracking_data.merge(
+            plays[['gameId', 'playId', 'yardlineNumber', 'yardlineSide', 'possessionTeam']],
+            on=['gameId', 'playId'],
+            how='left'
+        )
+
+        # Add week as a new column to distinguish between weeks
+        tracking_data['week'] = week
+
+        # Append the current week's data to the list
+        all_tracking_data.append(tracking_data)
+
+        # Print the loading time for the current week
+        end = time.time()
+        print(f"Processed {week} in {(end - start):.2f} seconds")
+
+    # Concatenate all weeks' data into one DataFrame
+    full_tracking_data = pd.concat(all_tracking_data, ignore_index=True)
+
+    return full_tracking_data
+
+
+if __name__ == "__main__":
+    start = time.time()
+    #tracking_week_1 = pd.read_csv('./Data/tracking_week_1.csv')
+    players = pd.read_csv('./Data/players.csv')
+    plays = pd.read_csv('./Data/plays.csv')
+    player_play = pd.read_csv('./Data/player_play.csv')
+    end = time.time()
+    print(f"Loaded data in {(end - start):.2f} seconds")
+
+    player_id = 53434
+    player_data = players[players['nflId'] == player_id]
+    player_dict = player_data.to_dict('records')[0]
     player_name = player_dict['displayName']
     player_position = player_dict['position']
 
 
-    tracking_data = standardize_data(tracking_data)
-    tracking_data = tracking_data.merge(
-        plays[['gameId', 'playId', 'yardlineNumber', 'yardlineSide', 'possessionTeam']],
-        on=['gameId', 'playId'],
-        how='left'
-    )
+    weeks = [1, 2, 3, 4, 5, 6, 7, 8, 9]  # Add more weeks as needed
+    weeks_to_graph = 9
+    combined_tracking_data = load_and_process_data(weeks, weeks_to_graph)
 
     # Graph data for each yard bucket
-    graph_by_yard_bucket(tracking_data, player_id, player_position, standardized_x=True)
+    graph_by_yard_bucket(combined_tracking_data, player_id, player_position, standardized_x=True)
+
+
