@@ -23,7 +23,7 @@ def group_by_five(x_offset):
 def group_by_ten(x_offset):
     if x_offset < 10:
         return 0
-    elif 10 <= x_offset:
+    else:
         return 1
 
 
