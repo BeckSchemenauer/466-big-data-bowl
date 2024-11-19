@@ -39,10 +39,10 @@ def categorize_yardline(yardline, ):
 def player_tracking_data():
     player_data = players[players['nflId'] == player_id]
     player_dict = player_data.to_dict('records')[0]
-    player_name = player_dict['displayName']
+
 
     tracking_data = data[data['nflId'] == player_id]
-    return tracking_data, player_name
+    return tracking_data, player_dict
 
 def standardize_data(tracking_data):
     # Standardize the player's direction to always appear as moving to the right
@@ -54,7 +54,7 @@ def standardize_data(tracking_data):
     print(f"Standardized x in {(end - start):.2f} seconds")
     return tracking_data
 
-def graph_tracking_data(tracking_data, player_id, standardized_x=False, bucket_name=None):
+def graph_tracking_data(tracking_data, player_id, player_position, standardized_x=False, bucket_name=None):
     # Set up the field dimensions for plotting
     start = time.time()
 
@@ -75,23 +75,37 @@ def graph_tracking_data(tracking_data, player_id, standardized_x=False, bucket_n
     for play_id in plays:
         play_data = tracking_data[tracking_data['playId'] == play_id]
         player_play_data = player_play[(player_play['nflId'] == player_id) & (player_play['playId'] == play_id)]
-        reception = True if player_play_data.iloc[0]["hadPassReception"] == 1 else False
-        if reception:
-            print(f"reception on Play: {play_id}")
+        if player_position != 'QB':
+            reception = True if player_play_data.iloc[0]["hadPassReception"] == 1 else False
+        else:
+            reception = True
+        # if reception:
+        #     print(f"reception on Play: {play_id}")
         # TODO: plot point of reception
         reception_frame_id = 0
-
 
         # Generate a unique color for this play
         color = plt.cm.viridis(np.random.rand())
         if reception:
+            catch_data = tracking_data[(tracking_data['playId'] == play_id) &
+                                       (tracking_data['event'] == 'pass_outcome_caught')]
+            try:
+                catch_x = catch_data[x].iloc[0]
+            except IndexError:
+                print(f"reception on Play: {play_id}")
+                catch_x = None
+            try:
+                catch_y = catch_data['y'].iloc[0]
+            except IndexError:
+                catch_y = None
             color = (*color[:3], 0.8)
         else:
             color = (*color[:3], 0.1)  # Adjust alpha to 0.5
 
         # Plot the trajectory line using the unique color
         ax.plot(play_data[x], play_data['y'], linewidth=3, color=color)
-
+        if reception:
+            ax.scatter(catch_x, catch_y, color='black', marker='x', s=50, label='Catch', zorder=3)
         # Add a dot for the starting point with the same color as the line
         ax.scatter(play_data[x].iloc[0], play_data['y'].iloc[0], color=color,
                    label='Start' if play_id == plays[0] else "")
@@ -133,7 +147,7 @@ def calculate_yards_to_go(row):
         print("<0 yards to go")
     return absolute_yardline
 
-def graph_by_yard_bucket(tracking_data, player_id, standardized_x=False):
+def graph_by_yard_bucket(tracking_data, player_id, player_position, standardized_x=False):
     # Apply the function to calculate yards to go
     tracking_data['yards_to_go'] = tracking_data.apply(calculate_yards_to_go, axis=1)
     tracking_data['yard_bucket'] = tracking_data['yards_to_go'].apply(categorize_yardline)
@@ -141,13 +155,17 @@ def graph_by_yard_bucket(tracking_data, player_id, standardized_x=False):
 
     for bucket in yard_buckets:
         bucket_data = tracking_data[tracking_data['yard_bucket'] == bucket]
-        graph_tracking_data(bucket_data, player_id, standardized_x, bucket_name=bucket)
+        graph_tracking_data(bucket_data, player_id, player_position, standardized_x, bucket_name=bucket)
 
 if __name__ == "__main__":
-    player_id = 47834
+    player_id = 46206
 
     # Load and standardize tracking data
-    tracking_data, player_name = player_tracking_data()
+    tracking_data, player_dict = player_tracking_data()
+    player_name = player_dict['displayName']
+    player_position = player_dict['position']
+
+
     tracking_data = standardize_data(tracking_data)
     tracking_data = tracking_data.merge(
         plays[['gameId', 'playId', 'yardlineNumber', 'yardlineSide', 'possessionTeam']],
@@ -156,4 +174,4 @@ if __name__ == "__main__":
     )
 
     # Graph data for each yard bucket
-    graph_by_yard_bucket(tracking_data, player_id, standardized_x=True)
+    graph_by_yard_bucket(tracking_data, player_id, player_position, standardized_x=True)
