@@ -7,7 +7,7 @@ from rf_helper import generate_report, get_normalized_data
 import pickle
 
 
-X_normalized, y = get_normalized_data(csv_file='../AfterSnap/after_snap_4.csv', five_yard_grouping=False)
+X_normalized, y = get_normalized_data(csv_file='../AfterSnap/after_snap_3.csv', five_yard_grouping=True)
 
 # Split the data into train and test sets
 X_train, X_test, y_train, y_test = train_test_split(X_normalized, y, test_size=0.2, random_state=42)
@@ -69,4 +69,4 @@ with open("best_random_forest_model.pkl", "wb") as file:
 
 print(best_params)
 
-generate_report(best_model, X_normalized, X_test, y_test, False)
+generate_report(best_model, X_normalized, X_test, y_test, True)
