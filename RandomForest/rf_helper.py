@@ -3,12 +3,13 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.metrics import accuracy_score, classification_report
+import hashlib
 
 
 def group_by_five(x_offset):
     if x_offset < 0:
         return 0
-    elif 0 <= x_offset <= 5:
+    elif 0 < x_offset <= 5:
         return 1
     elif 5 < x_offset <= 10:
         return 2
@@ -28,21 +29,22 @@ def group_by_ten(x_offset):
 
 
 # Function to convert mm:ss to seconds
-def convert_to_seconds(time_str, quarter):
+def convert_to_seconds(time_str):
     minutes, seconds = map(int, time_str.split(':'))
-
-    # if quarter == 1 or quarter == 3:
-    #     return minutes * 60 + seconds + 900
 
     return minutes * 60 + seconds
 
 
-def get_normalized_data(csv_file, five_yard_grouping):
+def get_normalized_data(csv_file, five_yard_grouping, cols=None):
     # Load the CSV file
     data = pd.read_csv(csv_file)
 
     # Drop id columns
     data = data.drop(['gameId', 'playId', 'frameId', 'displayName', 'frameType', 'position', 'y_offset'], axis=1)
+
+    if cols:
+        cols.append("x_offset")
+        data = data[cols]
 
     # Prepare lists to hold the input-output pairs
     X = []
@@ -63,18 +65,28 @@ def get_normalized_data(csv_file, five_yard_grouping):
             y.append(group_by_ten(x_offset_value))
 
     # Convert X and y to DataFrames
-    X = pd.DataFrame(X)
+    df = pd.DataFrame(X)
     y = pd.Series(y)
 
     # One hot encoding and normalization
-    X_normalized = pd.get_dummies(X,
-                                  columns=['offenseFormation', 'receiverAlignment', 'pff_passCoverage', 'pff_manZone',
-                                           'teamAbbr'],
-                                  prefix=['offenseFormation', 'receiverAlignment', 'pff_passCoverage', 'pff_manZone',
-                                          'teamAbbr'], drop_first=True)
-    X_normalized['playDirection'] = np.where(X_normalized['playDirection'] == 'left', 1, 0)
-    X_normalized['gameClock'] = X_normalized.apply(lambda row: convert_to_seconds(row['gameClock'], row['quarter']),
-                                                   axis=1)
+    one_hot_cols = list(set(df.columns) & {'offenseFormation', 'receiverAlignment', 'pff_passCoverage', 'pff_manZone',
+                                           'teamAbbr'})
+
+    if one_hot_cols:
+        X_normalized = pd.get_dummies(df,
+                                      columns=one_hot_cols,
+                                      prefix=one_hot_cols, drop_first=True)
+    else:
+        X_normalized = df
+
+    if 'playDirection' in X_normalized.columns:
+        X_normalized['playDirection'] = np.where(X_normalized['playDirection'] == 'left', 1, 0)
+    if 'gameClock' in X_normalized.columns:
+        X_normalized['gameClock'] = X_normalized.apply(lambda row: convert_to_seconds(row['gameClock']), axis=1)
+
+    # print("X_normalized hash:", hashlib.md5(np.ascontiguousarray(X_normalized.to_numpy())).hexdigest())
+    # print("X hash:", hashlib.md5(np.ascontiguousarray(df.to_numpy())).hexdigest())
+    # print("y hash:", hashlib.md5(y.to_numpy()).hexdigest())
 
     return X_normalized, y
 
@@ -138,26 +150,29 @@ def generate_report(model, X_normalized, X_test, y_test, five_yard_grouping):
     sorted_idx = feature_importance.argsort()
 
     # Define feature groups
+    columns_array = np.array(X_normalized.columns)
+
     feature_groups = {
-        'offenseFormation': [col for col in X_normalized.columns if col.startswith('offenseFormation_')],
-        'receiverAlignment': [col for col in X_normalized.columns if col.startswith('receiverAlignment_')],
-        'pff_passCoverage': [col for col in X_normalized.columns if col.startswith('pff_passCoverage_')],
-        'pff_manZone': [col for col in X_normalized.columns if col.startswith('pff_manZone_')],
-        'teamAbbr': [col for col in X_normalized.columns if col.startswith('teamAbbr_')]
+        'offenseFormation': [col for col in columns_array if col.startswith('offenseFormation_')],
+        'receiverAlignment': [col for col in columns_array if col.startswith('receiverAlignment_')],
+        'pff_passCoverage': [col for col in columns_array if col.startswith('pff_passCoverage_')],
+        'pff_manZone': [col for col in columns_array if col.startswith('pff_manZone_')],
+        'teamAbbr': [col for col in columns_array if col.startswith('teamAbbr_')]
     }
 
     # Calculate importances for each group
     group_importances = {}
     all_grouped_features = set()
+
     for group_name, features in feature_groups.items():
         group_importances[group_name] = feature_importance[
-            sorted_idx[np.isin(X_normalized.columns[sorted_idx], features)]].sum()
+            sorted_idx[np.isin(columns_array[sorted_idx], features)]].sum()
         all_grouped_features.update(features)
 
     # Add ungrouped features individually
-    ungrouped_features = [col for col in X_normalized.columns if col not in all_grouped_features]
+    ungrouped_features = [col for col in columns_array if col not in all_grouped_features]
     for feature in ungrouped_features:
-        feature_idx = np.where(X_normalized.columns == feature)[0][0]
+        feature_idx = np.where(columns_array == feature)[0][0]
         group_importances[feature] = feature_importance[feature_idx]
 
     # Sort the final importances for better visualization
@@ -177,3 +192,5 @@ def generate_report(model, X_normalized, X_test, y_test, five_yard_grouping):
         plt.text(v + 0.01, i, str(round(v, 3)), color='black', va='baseline', fontweight='bold', fontsize=12)
 
     plt.show()
+
+    print(list(sorted_importances.keys()))
