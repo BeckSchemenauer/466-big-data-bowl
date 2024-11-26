@@ -8,7 +8,7 @@ import pickle
 
 
 # 5 or 10 yard groupings
-five_yard_grouping = True
+five_yard_grouping = False
 seconds_after_snap = 2
 
 
@@ -22,12 +22,12 @@ X_train, X_test, y_train, y_test = train_test_split(X_normalized, y, test_size=0
 
 # Define hyperparameters to test
 param_grid = {
-    'n_estimators': [90, 100, 110],
-    'max_depth': [20],
-    'min_samples_split': [5],
-    'min_samples_leaf': [2],
+    'n_estimators': [50, 100],
+    'max_depth': [10, 20, 30],
+    'min_samples_split': [5, 7],
+    'min_samples_leaf': [2, 5],
     'max_features': ['sqrt'],
-    'random_state': [i for i in range(40)],
+    'random_state': [42],
 }
 
 # Track the best model and highest accuracy
@@ -68,4 +68,4 @@ with open("best_random_forest_model.pkl", "wb") as file:
 
 print(best_params)
 
-generate_report(best_model, X_normalized, X_test, y_test, True)
+generate_report(best_model, X_normalized, X_test, y_test, five_yard_grouping)
