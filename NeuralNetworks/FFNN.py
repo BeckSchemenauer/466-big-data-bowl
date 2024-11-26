@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
 
-train_data = pd.read_csv('./AfterSnap/after_snap_3.csv')
+train_data = pd.read_csv('../AfterSnap/after_snap_3.csv')
 train_data.drop(["displayName", "position", "playId", "gameId"], inplace=True, axis=1)
 def convert_to_seconds(clock):
     minutes, seconds = map(int, clock.split(":"))
