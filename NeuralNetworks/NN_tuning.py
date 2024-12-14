@@ -82,10 +82,10 @@ y_tensor = torch.tensor(y.values, dtype=torch.float32).to(device)
 X_train, X_test, y_train, y_test = train_test_split(X_tensor, y_tensor, test_size=0.2, random_state=42)
 
 # Hyperparameter search space
-hidden_layer_configs = [[16], [32], [16, 32]]  # Focus on simpler architectures
-activation_functions = ['Tanh']  # Centered around Tanh
-learning_rates = [0.0001, 0.0005]  # Close to the best value
-batch_sizes = [16, 32]  # Small variations around 32
+hidden_layer_configs = [[64, 32]]  # Focus on simpler architectures
+activation_functions = ['ReLu']  # Centered around Tanh
+learning_rates = [.0001]  # Close to the best value
+batch_sizes = [16]  # Small variations around 32
 epochs = 50
 
 # Store results

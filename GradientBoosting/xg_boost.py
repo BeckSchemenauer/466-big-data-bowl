@@ -2,7 +2,7 @@ import joblib
 import xgboost as xgb
 import pandas as pd
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 from RandomForest.rf_helper import get_normalized_data
 
 # Load and prepare data
@@ -29,12 +29,12 @@ model = xgb.XGBClassifier(
 
 # Define a grid of hyperparameters to search over
 param_grid = {
-    'max_depth': [3, 6, 10],  # Depth of the trees
-    'learning_rate': [0.01, 0.1, 0.2],  # Learning rate
+    'max_depth': [3,],  # Depth of the trees
+    'learning_rate': [0.1],  # Learning rate
     'subsample': [0.9],  # Subsample ratio of the training instances
     'colsample_bytree': [0.9],  # Subsample ratio of columns when constructing each tree
-    'gamma': [0, 0.1, 0.2],  # Minimum loss reduction required to make a further partition
-    'min_child_weight': [1, 5, 10]  # Minimum sum of instance weight (hessian) in a child
+    'gamma': [0.1,],  # Minimum loss reduction required to make a further partition
+    'min_child_weight': [10,]  # Minimum sum of instance weight (hessian) in a child
 }
 
 # Perform grid search with cross-validation
@@ -64,6 +64,14 @@ best_model = grid_search.best_estimator_
 y_pred = best_model.predict(X_test)
 test_accuracy = accuracy_score(y_test, y_pred)
 print(f"Test Accuracy: {test_accuracy:.4f}")
+
+# Predict the labels
+y_pred = best_model.predict(X_test)
+
+# Generate classification report
+report = classification_report(y_test, y_pred, target_names=["Class 0", "Class 1"])
+print("Classification Report:")
+print(report)
 
 # Save the best model to a file
 joblib.dump(best_model, 'best_xgb_model.pkl')
