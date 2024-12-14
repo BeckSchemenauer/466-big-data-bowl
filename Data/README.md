@@ -10,6 +10,8 @@ players.csv | player position, etc. | kaggle
 
 plays.csv | yardline, score, formation, etc. | kaggle
 
+games.csv  | Week, gameDate, gameTimeEastern  | kaggle
+
 tracking_week_1.csv | contains data such as x, y by player | kaggle
 
 tracking_week_2.csv | contains data such as x, y by player | kaggle
