@@ -1,2 +1,2 @@
 # 466-big-data-bowl
-Grader Notes: Final Models are in the GradientBoosting, NeuralNetworks, and RandomForests Folders
+Grader Notes: Final Models are in the GradientBoosting, NeuralNetworks, and RandomForest Folders
