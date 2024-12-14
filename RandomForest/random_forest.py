@@ -45,8 +45,6 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 test_accuracy = accuracy_score(y_test, y_pred)
 
-#print(f"Test Set Accuracy: {test_accuracy:.4f}")
-
 # Save the model to a pickle file
 model_filename = f"models/{seconds_after_snap}_seconds_{'five' if five_yard_grouping else 'ten'}_yard_grouping_{round(test_accuracy, 4)}%.pkl"
 with open(model_filename, "wb") as file:
